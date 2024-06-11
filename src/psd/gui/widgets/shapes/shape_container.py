@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from .callback_container import *
 from .customized_callbacks import *
 from ....util.util import findMainWindow
-from smart.util.geometry_transformation import rotate_multiple_points, angle_between
+from psd.util.geometry_transformation import rotate_multiple_points, angle_between
 
 DECORATION_UPON_CURSOR_ON = {'pen': {'color': (255, 255, 0), 'width': 1, 'ls': 'DotLine'}, 'brush': {'color': (0, 0, 255)}} 
 DECORATION_UPON_CURSOR_OFF = {'pen': {'color': (255, 0, 0), 'width': 1, 'ls': 'SolidLine'}, 'brush': {'color': (0, 0, 255)}}
@@ -948,7 +948,7 @@ class shapeComposite(TaurusBaseComponent, QObject):
     # modelKeys = []
     updateSignal = pyqtSignal()
 
-    def __init__(self, shapes, parent = None, anchor_args=None, alignment_pattern=None, connection_pattern = None, ref_shape_index = None, model_index_list = [], callbacks_upon_model_change = [], callbacks_upon_mouseclick = []):
+    def __init__(self, shapes, parent = None, anchor_args=None, alignment_pattern=None, connection_pattern = None, ref_shape_index = None, model_index_list = [], callbacks_upon_model_change = [], callbacks_upon_mouseclick = [],callbacks_upon_rightmouseclick = []):
         #connection_patter = {'shapes':[[0,1],[1,2]], 'anchors':[['left','top'],['right', 'bottom']]}
         #alignment_patter = {'shapes':[[0,1],[1,2]], 'anchors':[['left','top'],['right', 'bottom']]}
         super(QObject, shapeComposite).__init__(self)
@@ -958,6 +958,7 @@ class shapeComposite(TaurusBaseComponent, QObject):
         self._model_shape_index_list = model_index_list
         self._callbacks_upon_model_change = callbacks_upon_model_change
         self._callbacks_upon_left_mouseclick = callbacks_upon_mouseclick
+        self._callbacks_upon_right_mouseclick = callbacks_upon_rightmouseclick
         self.ref_shape = self.shapes[ref_shape_index] if ref_shape_index!=None else self.shapes[0]
         self.anchor_args = anchor_args
         # self.make_anchors()
@@ -988,6 +989,7 @@ class shapeComposite(TaurusBaseComponent, QObject):
             self.shapes[ix].set_clickable(True)
         self.callbacks_upon_model_change = [self._make_callback(each, False) for each in self.callbacks['callbacks_upon_model_change'].values()]
         self.callbacks_upon_left_mouseclick = [self._make_callback(each, True) for each in self.callbacks['callbacks_upon_leftmouse_click'].values()]
+        self.callbacks_upon_right_mouseclick = [self._make_callback(each, True) for each in self.callbacks['callbacks_upon_rightmouse_click'].values()]
 
     def _make_callback(self, callback_info_list, mouseclick_callback = True):
         if callback_info_list==None or callback_info_list=='None':
@@ -1054,6 +1056,15 @@ class shapeComposite(TaurusBaseComponent, QObject):
         assert len(cbs) == len(self.model_shape_index_list), "Length of callbacks must equal to that of model shape index"
         self._callbacks_upon_left_mouseclick = {ix: cb for ix, cb in zip(self.model_shape_index_list, cbs)}
 
+    @property
+    def callbacks_upon_right_mouseclick(self):
+        return self._callbacks_upon_right_mouseclick
+    
+    @callbacks_upon_right_mouseclick.setter
+    def callbacks_upon_right_mouseclick(self, cbs):
+        assert len(cbs) == len(self.model_shape_index_list), "Length of callbacks must equal to that of model shape index"
+        self._callbacks_upon_right_mouseclick = {ix: cb for ix, cb in zip(self.model_shape_index_list, cbs)}
+
     def build_composite(self):
         self.align_shapes()
         self.make_line_connection()
@@ -1100,6 +1111,9 @@ class shapeComposite(TaurusBaseComponent, QObject):
 
     def uponLeftMouseClicked(self, shape_index):
         self.callbacks_upon_left_mouseclick[shape_index](self.parent)
+
+    def uponRightMouseClicked(self, shape_index):
+        return self.callbacks_upon_right_mouseclick[shape_index](self.parent)     
 
     def handleEvent(self, evt_src, evt_type, evt_value):
         """reimplemented from TaurusBaseComponent"""
@@ -1151,8 +1165,10 @@ class buildTools(object):
             hide_shape_ix = composite_info.pop('hide', [])
             callbacks_upon_model_change = composite_info['callbacks_upon_model_change']
             callbacks_upon_leftmouse_click = composite_info['callbacks_upon_leftmouse_click']
+            callbacks_upon_rightmouse_click = composite_info['callbacks_upon_rightmouse_click']
             callbacks = {'callbacks_upon_model_change': callbacks_upon_model_change,
-                         'callbacks_upon_leftmouse_click': callbacks_upon_leftmouse_click}
+                         'callbacks_upon_leftmouse_click': callbacks_upon_leftmouse_click,
+                         'callbacks_upon_rightmouse_click': callbacks_upon_rightmouse_click}
             shapes_tag = composite_info['shapes']
             shapes = [] 
             for each in shapes_tag:

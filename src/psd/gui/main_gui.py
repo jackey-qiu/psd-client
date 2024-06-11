@@ -6,7 +6,6 @@
 from pathlib import Path
 from PyQt5 import QtCore, uic
 from PyQt5.QtWidgets import QMessageBox, QMainWindow
-from ..plugin.builtin_plugin.synoptic_viewer_contol import synopticViewerControl
 
 from psd import rs_path
 from os import listdir
@@ -27,7 +26,7 @@ class smartGui(QMainWindow):
         super(smartGui, self).__init__(parent)
         print(str(ui_file_folder / 'img_reg_main_window.ui'))
         uic.loadUi(str(ui_file_folder / 'img_reg_main_window.ui'), self)
-        synopticViewerControl.__init__(self)
+        # synopticViewerControl.__init__(self)
         self.setMinimumSize(800, 600)
         self.widget_terminal.update_name_space('gui', self)
         # self.widget_motor_widget.set_parent(self)
@@ -35,8 +34,8 @@ class smartGui(QMainWindow):
         # self.widget_queue_synoptic_viewer.set_parent(self)
         self._parent = self
         self.populate_synoptic_viewer_config_files()
-
         self.connect_slots()
+        self.first_client = True
 
     def connect_slots(self):
         """

@@ -234,6 +234,15 @@ composite_shapes:
       11: ['pickup_solution', "dev_proxy", "syringe_4", "val_pos", "1",'fill','True']
       12: ['dispense_solution', "dev_proxy", "syringe_4", "val_pos", "2",'drain','True']
       13: ['fill_cell', "dev_proxy", "syringe_4", 'vol', '500']
+    callbacks_upon_rightmouse_click:
+      9: null
+      10: null
+      3: null
+      4: null
+      5: null
+      11: ['setup_pickup_solution', "dev_proxy", "syringe_4", "val_pos", "1",'fill','True']
+      12: ['setup_dispense_solution', "dev_proxy", "syringe_4", "val_pos", "2",'drain','True']
+      13: ['setup_fill_cell', "dev_proxy", "syringe_4", 'vol', '500']
   syringe2:
     shapes: 
       - 'circle.tiny*1'
@@ -311,6 +320,15 @@ composite_shapes:
       11: ['pickup_solution', "dev_proxy", "syringe_2", "val_pos", "1",'fill','True']
       12: ['dispense_solution', "dev_proxy", "syringe_2", "val_pos", "2",'drain','True']      
       13: ['fill_cell', "dev_proxy", "syringe_2", 'vol', '500']
+    callbacks_upon_rightmouse_click:
+      9: null
+      10: null
+      3: null
+      4: null
+      5: null 
+      11: null 
+      12: null      
+      13: null 
   syringe3:
     shapes: 
       - 'circle.tiny*1'
@@ -382,6 +400,14 @@ composite_shapes:
       5: ['move_valve', "dev_proxy", "syringe_3", "val_pos", "3"]
       11: ['pickup_solution', "dev_proxy", "syringe_3", "val_pos", "1",'fill','True']
       12: ['dispense_solution', "dev_proxy", "syringe_3", "val_pos", "2",'drain','True']
+    callbacks_upon_rightmouse_click:
+      9: null
+      10: null
+      3: null
+      4: null
+      5: null 
+      11: null 
+      12: null      
   syringe4:
     shapes: 
       - 'circle.tiny*1'
@@ -453,19 +479,14 @@ composite_shapes:
       5: ['move_valve', "dev_proxy", "syringe_1", "val_pos", "3"]
       11: ['pickup_solution', "dev_proxy", "syringe_1", "val_pos", "1",'fill','True']
       12: ['dispense_solution', "dev_proxy", "syringe_1", "val_pos", "2",'drain','True']
-  cell_2:
-    inherit: cell
-    models: []
-    callbacks_upon_model_change:
-      1: ['callback_model_change_with_transformation', 'mv_dir', 'x']
-      2: ['callback_model_change_with_text_label']
-      3: ['callback_model_change_with_decoration']
-      4: ['callback_model_change_with_transformation', 'mv_dir', 'y']
-    callbacks_upon_leftmouse_click:
-      1: null
-      2: null
+    callbacks_upon_rightmouse_click:
+      9: null
+      10: null
       3: null
       4: null
+      5: null 
+      11: null 
+      12: null      
   cell:
     shapes: ['circle.tiny*1','circle.big*1','rectangle.cellbottom*1','trapezoid.cell*1','rectangle.prepare*1','rectangle.exchange*1','circle.stop*1','rectangle.connect*1','rectangle.init*1','rectangle.initValve*1','rectangle.increase*1','rectangle.decrease*1']
     ref_shape: null
@@ -486,7 +507,6 @@ composite_shapes:
       9: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
       10: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
       11: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
-
     callbacks_upon_model_change:
       4: null
       5: null
@@ -513,6 +533,15 @@ composite_shapes:
         - ['increase_liquid_vol_in_cell','vol','50'] 
       11:
         - ['decrease_liquid_vol_in_cell','vol', '50'] 
+    callbacks_upon_rightmouse_click:
+      4: ['setup_exchange']
+      5: null
+      6: null
+      7: ['setup_client_par']
+      8: null 
+      9: null 
+      10: null      
+      11: null 
   bottle:
     shapes: ['circle.tiny*1','rectangle.bottle_top*1','rectangle.bottle_thread*3','rectangle.bottle_bottom*1', 'rectangle.bottle_marker*1']
     ref_shape: null
@@ -527,6 +556,7 @@ composite_shapes:
     models: []
     callbacks_upon_model_change: []
     callbacks_upon_leftmouse_click: []    
+    callbacks_upon_rightmouse_click: []    
   anchor:
     shapes: ['circle.tiny*2']
     ref_shape: null
@@ -543,6 +573,9 @@ composite_shapes:
       7: []
       8: []
     callbacks_upon_leftmouse_click:
+      7: []
+      8: []
+    callbacks_upon_rightmouse_click:
       7: []
       8: []
 viewers:

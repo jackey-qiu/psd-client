@@ -199,22 +199,6 @@
              <property name="currentIndex">
               <number>0</number>
              </property>
-             <widget class="QWidget" name="tab_13">
-              <attribute name="title">
-               <string>Spock</string>
-              </attribute>
-              <layout class="QHBoxLayout" name="horizontalLayout_9">
-               <item>
-                <widget class="QtSpockWidget" name="widget_spock" native="true">
-                 <property name="font">
-                  <font>
-                   <pointsize>12</pointsize>
-                  </font>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
              <widget class="QWidget" name="tab_4">
               <attribute name="title">
                <string>Console</string>
@@ -252,19 +236,13 @@
   <customwidget>
    <class>TerminalWidget</class>
    <extends>QWidget</extends>
-   <header>smart.gui.widgets.terminal_widget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>QtSpockWidget</class>
-   <extends>QWidget</extends>
-   <header>sardana.taurus.qt.qtgui.extra_sardana.qtspock.h</header>
+   <header>psd.gui.widgets.terminal_widget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>beamlineSynopticViewer</class>
    <extends>QWidget</extends>
-   <header>smart.gui.widgets.synoptic_widgets.beamline_viewer.h</header>
+   <header>psd.gui.widgets.synoptic_widgets.beamline_viewer.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

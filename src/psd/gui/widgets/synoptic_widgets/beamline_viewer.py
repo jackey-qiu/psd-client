@@ -6,7 +6,7 @@ from ...widgets.shapes.shape_container import rectangle, shapeComposite, isocele
 from ...widgets.shapes.callback_container import *
 from ...widgets.shapes.customized_callbacks import *
 from ....util.util import findMainWindow
-from smart import rs_path
+from psd import rs_path
 from magicgui import magicgui
 
 class beamlineSynopticViewer(QWidget):
@@ -171,6 +171,7 @@ class beamlineSynopticViewer(QWidget):
 
     def mousePressEvent(self, event):
         x, y = event.x(), event.y()
+        '''
         if event.button() == Qt.RightButton:
             #set the title
             mggui_func = self.method_temp_outside(0.2)
@@ -179,10 +180,21 @@ class beamlineSynopticViewer(QWidget):
             mggui_func.native.move(pos.x()+x, pos.y()+y)
             mggui_func.show(run=True)
             return
+        '''
         if self.viewer_shape == None:
             return
         for composite_shape in self.viewer_shape.values():
             for i, each_shape in enumerate(composite_shape.shapes):
                 if each_shape.cursor_pos_checker(x, y) and each_shape.clickable:
-                    composite_shape.uponLeftMouseClicked(i)
-                    return
+                    if event.button() == Qt.LeftButton:
+                        composite_shape.uponLeftMouseClicked(i)
+                        return
+                    elif event.button() == Qt.RightButton:
+                        mggui_func = composite_shape.uponRightMouseClicked(i)
+                        if mggui_func==None:
+                            return
+                        mggui_func.native.setWindowTitle('setup_pars')
+                        pos = self.parentWidget().mapToGlobal(self.pos())
+                        mggui_func.native.move(pos.x()+x, pos.y()+y)
+                        mggui_func.show(run=True)                        
+                        return

@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
 install_requires=["PyQt5", "pyqtgraph", \
-                  "QDarkStyle", \
-                  "pytango", "taurus", "taurus-pyqtgraph", \
-                  "IPython", "qtconsole", 'magicgui']
+                  "QDarkStyle", "pyyaml", \
+                  "pytango", "taurus", 'pyserial',\
+                  'magicgui','numpy','scipy']
 
 setup(
     name = 'psd',
@@ -18,7 +18,7 @@ setup(
     python_requires='>=3.7, <=3.10',
     install_requires = install_requires,
     packages=find_packages(),
-    package_data={'':['*.ui','*.ini','*.qrc'],'smart.bin':['*.png'], 'psd.gui.ui':['icons/*/*.png'],\
+    package_data={'':['*.ui','*.ini','*.qrc'],'psd.bin':['*.png'], 'psd.gui.ui':['icons/*/*.png'],\
                   'psd.resource':['config/appsettings.ini']},
     entry_points = {
         'console_scripts' : [

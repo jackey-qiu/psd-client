@@ -1,13 +1,18 @@
-try:
-    import psdrive as psd
-    from psdrive import device
-except:
-    pass
-from smart import rs_path
+import psd.plugin.builtin_plugin.psdrive as psd_api
+from psd import rs_path
 import yaml
+from enum import Enum
+from magicgui import magicgui
+
 
 config_file = str(rs_path / 'psd_pump_config' / 'nodb_configuration.yml')
 #from smart.gui.widgets.shapes.customized_callbacks import *
+
+class Valve(Enum):
+    """Enum for various media and their refractive indices."""
+    left = 1
+    up = 2
+    right = 3
 
 def create_pump_client(parent, firstclient = True):
     #firstclient has to be the one making direct connection to the pump
@@ -20,7 +25,7 @@ def create_pump_client(parent, firstclient = True):
             port = config['server']['port']
             tango_name = config['server']['tangoname']
             full_address = f'tango://{host}:{port}/{tango_name}'
-            setattr(parent, "pump_client", psd.connect(full_address))
+            setattr(parent, "pump_client", psd_api.connect(full_address))
         except Exception as er:
             raise LookupError(str(er))
     else:
@@ -28,7 +33,7 @@ def create_pump_client(parent, firstclient = True):
             #server should be started from astor panel
             #psd.start_server_fromFile(config_file)
             #this will create a pumpinterface client and connect to the specified port if necessary
-            client = psd.fromFile(config_file)
+            client = psd_api.fromFile(config_file)
             #reconfig the client and server using the content in config_file
             client.readConfigfile(config_file)
             setattr(parent, 'pump_client', client)
@@ -93,8 +98,51 @@ def pickup_solution(parent, dev_proxy, vol = 0, val_pos = -1, speed = -1, fill =
     else:
         dev_proxy.fill(int(val_pos), float(speed))
 
+def setup_pickup_solution(parent, dev_proxy, vol = 0, val_pos = -1, speed = -1, fill = True):
+    if hasattr(parent, dev_proxy):
+        dev_proxy = getattr(parent, dev_proxy)        
+        val_pos = int(dev_proxy.valve)
+        speed = dev_proxy.rate
+    else:
+        dev_proxy = None
+        if speed == -1:
+            speed = 1
+        if val_pos == -1:
+            val_pos = 1
+
+    @magicgui(auto_call=True, speed={'min': 1, 'max': 250})
+    def setup_func( speed=float(speed), val_pos = list(Valve)[[1,2,3].index(int(val_pos))]):
+        if dev_proxy==None:
+            print(locals())
+        else:
+            dev_proxy.valve = val_pos.value
+            dev_proxy.join()
+            dev_proxy.rate = speed
+    return setup_func
+
 def fill_cell(parent, dev_proxy, vol):
     dispense_solution(parent, dev_proxy, float(vol), 3, speed = -1, drain = False)
+
+def setup_fill_cell(parent, dev_proxy, vol):
+    if hasattr(parent, dev_proxy):
+        dev_proxy = getattr(parent, dev_proxy)        
+        #val_pos = int(dev_proxy.valve)
+        speed = dev_proxy.rate
+    else:
+        dev_proxy = None
+        speed = 1
+        #val_pos = 3
+
+    @magicgui(auto_call=True, speed={'min': 1, 'max': 250}, fill_vol = {'max': 5000})
+    def setup_func(speed=float(speed), val_pos = Valve.right, fill_vol = float(vol)):
+        if dev_proxy==None:
+            print(locals())
+        else:
+            dev_proxy.valve = val_pos.value
+            dev_proxy.join()
+            dev_proxy.rate = speed
+            dev_proxy.volume = dev_proxy.volume - fill_vol
+    return setup_func
 
 def dispense_solution(parent,dev_proxy, vol = 0, val_pos = -1, speed = -1, drain = True):
     dev_proxy = getattr(parent, dev_proxy)
@@ -104,7 +152,29 @@ def dispense_solution(parent,dev_proxy, vol = 0, val_pos = -1, speed = -1, drain
         dev_proxy.dispense(float(vol), float(speed))
     else:
         dev_proxy.drain(int(val_pos), float(speed))
-        
+
+def setup_dispense_solution(parent, dev_proxy, vol = 0, val_pos = -1, speed = -1, drain = True):
+    if hasattr(parent, dev_proxy):
+        dev_proxy = getattr(parent, dev_proxy)        
+        val_pos = int(dev_proxy.valve)
+        speed = dev_proxy.rate
+    else:
+        dev_proxy = None
+        if speed == -1:
+            speed = 1
+        if val_pos == -1:
+            val_pos = 2
+
+    @magicgui(auto_call=True, speed={'min': 1, 'max': 250})
+    def setup_func(speed=float(speed), val_pos = list(Valve)[[1,2,3].index(int(val_pos))]):
+        if dev_proxy==None:
+            print(locals())
+        else:
+            dev_proxy.valve = val_pos.value
+            dev_proxy.join()
+            dev_proxy.rate = speed
+    return setup_func
+
 def move_valve(parent, dev_proxy,val_pos):
     getattr(parent,dev_proxy).valve = int(val_pos)
 
@@ -131,6 +201,33 @@ def prepare_exchange(parent):
     parent.syringe_4.join()
     parent.pump_client.operations["Exchanger 1"].prepare()
     parent.pump_client.operations["Exchanger 2"].prepare()
+
+def setup_exchange(parent):
+    if not hasattr(parent, 'pump_client'):
+        fillrate = 200
+        drainrate = 200
+        rate = 10
+        bubbleDispense = 500
+    else:
+        fillrate = parent.pump_client.operations['Exchanger 1'].fillrate
+        drainrate = parent.pump_client.operations['Exchanger 1'].drainrate
+        rate = parent.pump_client.operations['Exchanger 1'].rate
+        bubbleDispense = parent.pump_client.operations['Exchanger 1'].bubbleDispense
+    @magicgui(auto_call=True, 
+              fillrate={'min': 50, 'max': 250},
+              drainrate={'min': 50, 'max': 250},
+              rate={'min':1, 'max':200},
+              bubbleDispense={'min': 10, 'max': 5000})
+    def setup_func(fillrate=float(fillrate), drainrate=float(drainrate), rate=float(rate),bubbleDispense = float(bubbleDispense)):
+        if not hasattr(parent, 'pump_client'):
+            print(locals())
+        else:
+            for (key, value) in locals().items():
+                if key!='parent':
+                    setattr(parent.pump_client.operations['Exchanger 1'], key, value)
+                    setattr(parent.pump_client.operations['Exchanger 2'], key, value)
+    return setup_func
+
 
 def start_automatic_exchange(parent):
     parent.exchange_timer.timeout.connect(lambda: check_automatic_exchange(parent))
@@ -166,12 +263,18 @@ def check_automatic_exchange(parent):
 def all_setup_in_one(parent, firstclient=False):
     if type(firstclient)!=bool:
         firstclient = eval(firstclient)
-    create_pump_client(parent, firstclient = firstclient)
+    create_pump_client(parent, firstclient = parent.first_client)
     get_syringe_proxy(parent, 1)
     get_syringe_proxy(parent, 2)
     get_syringe_proxy(parent, 3)
     get_syringe_proxy(parent, 4)
     get_mvp_valve_proxy(parent, 5)
+
+def setup_client_par(parent):
+    @magicgui(auto_call=True)
+    def setup_func(first_client = bool(parent.first_client)):
+        parent.first_client = first_client
+    return setup_func
 
 def stop_all(parent):
     parent.pump_client.stop()
