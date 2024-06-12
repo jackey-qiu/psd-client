@@ -11,11 +11,14 @@ from psd import rs_path
 from os import listdir
 import yaml
 from PyQt5.QtCore import pyqtSlot as Slot
+import threading
 
 setting_file = str(Path(__file__).parent.parent / 'resource' / 'config' / 'appsettings.ini')
 ui_file_folder = Path(__file__).parent / 'ui'
 
 class smartGui(QMainWindow):
+
+    _instance_lock = threading.Lock()
 
     def __init__(self, parent = None):
         """
@@ -26,16 +29,33 @@ class smartGui(QMainWindow):
         super(smartGui, self).__init__(parent)
         print(str(ui_file_folder / 'img_reg_main_window.ui'))
         uic.loadUi(str(ui_file_folder / 'img_reg_main_window.ui'), self)
-        # synopticViewerControl.__init__(self)
         self.setMinimumSize(800, 600)
         self.widget_terminal.update_name_space('gui', self)
-        # self.widget_motor_widget.set_parent(self)
-        # self.widget_synoptic.set_parent(self)
-        # self.widget_queue_synoptic_viewer.set_parent(self)
         self._parent = self
         self.populate_synoptic_viewer_config_files()
         self.connect_slots()
+        self.init_attribute_values()
+
+    '''
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(smartGui, "_instance"):
+            with smartGui._instance_lock:
+                if not hasattr(smartGui, "_instance"):
+                    smartGui._instance = QMainWindow.__new__(cls)
+        return smartGui._instance
+    '''
+        
+    def init_attribute_values(self):
         self.first_client = True
+        self.leftover_vol = 1000
+        self.volume_change_on_the_fly = 50
+        self.volume_syringe_1 = 0
+        self.volume_syringe_2 = 0
+        self.volume_syringe_3 = 0
+        self.volume_syringe_4 = 0
+        self.volume_reservoir = 0
+        self.volume_cell = 0
+        self.volume_waste = 0
 
     def connect_slots(self):
         """

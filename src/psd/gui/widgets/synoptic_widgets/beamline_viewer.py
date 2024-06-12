@@ -13,18 +13,15 @@ class beamlineSynopticViewer(QWidget):
 
     def __init__(self, parent = None):
         super().__init__(parent = parent)
-        #self.config_file = yaml_config_file
         self.composite_shape = None
         self.viewer_shape = None
         self.viewer_connection = {}
         self.set_parent()
-        #self.init_viewer()
         self.parent.exchange_timer = QTimer()
+        self.parent.check_vol_timer = QTimer()
 
     def connect_slots_synoptic_viewer(self):
         pass
-        #self.parent.pushButton_slit.clicked.connect(lambda: self.init_shape('slit'))
-        #self.parent.pushButton_valve.clicked.connect(lambda: self.init_shape('valve'))
 
     def set_parent(self):
         self.parent = findMainWindow()
@@ -34,18 +31,7 @@ class beamlineSynopticViewer(QWidget):
         self.composite_shape.updateSignal.connect(self.update_canvas)
         self.update()
 
-    def detach_models(self):
-        #not working this way, need a right solution in the future
-        return
-        if self.viewer_shape!=None:
-            print('Detach models!')
-            for each, shape in self.viewer_shape.items():
-                if len(shape._models)!=0:
-                    for key in shape.modelKeys:
-                        shape._removeModelKey(key)
-
     def init_viewer(self):
-        self.detach_models()
         config_file = str(rs_path / 'config' / (self.parent.comboBox_viewer_filename.currentText() + '.yaml'))
         which_viewer = self.parent.comboBox_viewer_obj_name.currentText()
         view_shape, view_connection = buildTools.build_view_from_yaml(config_file, self.size().width())

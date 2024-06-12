@@ -240,8 +240,8 @@ composite_shapes:
       3: null
       4: null
       5: null
-      11: ['setup_pickup_solution', "dev_proxy", "syringe_4", "val_pos", "1",'fill','True']
-      12: ['setup_dispense_solution', "dev_proxy", "syringe_4", "val_pos", "2",'drain','True']
+      11: ['setup_pickup_solution', "dev_proxy", "syringe_4"]
+      12: ['setup_dispense_solution', "dev_proxy", "syringe_4"]
       13: ['setup_fill_cell', "dev_proxy", "syringe_4", 'vol', '500']
   syringe2:
     shapes: 
@@ -326,9 +326,9 @@ composite_shapes:
       3: null
       4: null
       5: null 
-      11: null 
-      12: null      
-      13: null 
+      11: ['setup_pickup_solution', "dev_proxy", "syringe_2"]
+      12: ['setup_dispense_solution', "dev_proxy", "syringe_2"]
+      13: ['setup_fill_cell', "dev_proxy", "syringe_2", 'vol', '500']
   syringe3:
     shapes: 
       - 'circle.tiny*1'
@@ -406,8 +406,8 @@ composite_shapes:
       3: null
       4: null
       5: null 
-      11: null 
-      12: null      
+      11: ['setup_pickup_solution', "dev_proxy", "syringe_3"]
+      12: ['setup_dispense_solution', "dev_proxy", "syringe_3"]
   syringe4:
     shapes: 
       - 'circle.tiny*1'
@@ -485,8 +485,8 @@ composite_shapes:
       3: null
       4: null
       5: null 
-      11: null 
-      12: null      
+      11: ['setup_pickup_solution', "dev_proxy", "syringe_1"]
+      12: ['setup_dispense_solution', "dev_proxy", "syringe_1"]
   cell:
     shapes: ['circle.tiny*1','circle.big*1','rectangle.cellbottom*1','trapezoid.cell*1','rectangle.prepare*1','rectangle.exchange*1','circle.stop*1','rectangle.connect*1','rectangle.init*1','rectangle.initValve*1','rectangle.increase*1','rectangle.decrease*1']
     ref_shape: null
@@ -499,6 +499,7 @@ composite_shapes:
     transformation: 
       translate: [220,220]
     models:
+      3: eval:@c=psd.gui.main_gui.smartGui()/c.volume_cell
       4: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
       5: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
       6: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
@@ -508,6 +509,7 @@ composite_shapes:
       10: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
       11: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
     callbacks_upon_model_change:
+      3: ['callback_model_change_with_text_label', 'anchor', 'left','orientation', 'horizontal', "val_ix","None", "sf","1","label","vol","end_txt","ul"]
       4: null
       5: null
       6: null
@@ -517,6 +519,7 @@ composite_shapes:
       10: null
       11: null
     callbacks_upon_leftmouse_click:
+      3: null
       4: 
         - ['prepare_exchange']    
       5: 
@@ -530,18 +533,19 @@ composite_shapes:
       9:
         - ['init_valve'] 
       10:
-        - ['increase_liquid_vol_in_cell','vol','50'] 
+        - ['increase_liquid_vol_in_cell'] 
       11:
-        - ['decrease_liquid_vol_in_cell','vol', '50'] 
+        - ['decrease_liquid_vol_in_cell'] 
     callbacks_upon_rightmouse_click:
+      3: null
       4: ['setup_exchange']
       5: null
       6: null
       7: ['setup_client_par']
       8: null 
       9: null 
-      10: null      
-      11: null 
+      10: ['setup_increase_liquid_vol_in_cell']
+      11: ['setup_decrease_liquid_vol_in_cell']
   bottle:
     shapes: ['circle.tiny*1','rectangle.bottle_top*1','rectangle.bottle_thread*3','rectangle.bottle_bottom*1', 'rectangle.bottle_marker*1']
     ref_shape: null
@@ -590,8 +594,8 @@ viewers:
         - [840, 120]
         - [1040, 220]
         - [1240, 220]
-        - [1440, 220]
-        - [1640, 220]
+        - [1460, 220]
+        - [1630, 220]
     connection:
       syringe.3.left<=>bottle.1.top: 
         pen:

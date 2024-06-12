@@ -40,7 +40,24 @@ def create_pump_client(parent, firstclient = True):
             return client
         except Exception as er:
             raise LookupError(str(er))
-        
+
+def setup_create_pump_client(parent):
+    with open(config_file, 'r', encoding='utf8') as f:
+        config = yaml.safe_load(f.read())
+
+    host = config['server']['host']
+    port = config['server']['port']
+    tango_name = config['server']['tangoname']
+
+    @magicgui(call_button='apply')
+    def setup_func(host=host, port=port, tango_name = tango_name):
+        config['server']['host'] = host
+        config['server']['port'] = port
+        config['server']['tangoname'] = tango_name
+        with open(config_file,'w') as f:
+            yaml.dump(config, f, default_flow_style=False)
+    return setup_func
+
 #reconfigure client and server using the config_file
 def configure(parent, config_file):
     with open(config_file, 'r', encoding='utf8') as f:
@@ -89,6 +106,33 @@ def init_valve(parent):
     parent.syringe_3.initValve()
     parent.syringe_4.initValve()
 
+def update_volumes(parent):
+    vol_change_reservoir = 0
+    vol_change_cell = 0
+    vol_change_waste = 0
+
+    vol_change_syringe_1 = parent.syringe_1.volume - parent.volume_syringe_1
+    vol_change_syringe_2 = parent.syringe_2.volume - parent.volume_syringe_2
+    vol_change_syringe_3 = parent.syringe_3.volume - parent.volume_syringe_3
+    vol_change_syringe_4 = parent.syringe_4.volume - parent.volume_syringe_4
+    vol_change_list = [vol_change_syringe_1, vol_change_syringe_2, vol_change_syringe_3, vol_change_syringe_4]
+    for i, syringe in enumerate([parent.syringe_1, parent.syringe_2, parent.syringe_3, parent.syringe_4]):
+        if syringe.valve == 'Reservoir':
+            vol_change_reservoir -= vol_change_list[i]
+        elif syringe.valve == 'Cell':
+            vol_change_cell -= vol_change_list[i]
+        elif syringe.valve == 'Waste':
+            vol_change_waste -= vol_change_list[i]
+
+    parent.volume_syringe_1 = parent.syringe_1.volume
+    parent.volume_syringe_2 = parent.syringe_2.volume
+    parent.volume_syringe_3 = parent.syringe_3.volume
+    parent.volume_syringe_4 = parent.syringe_4.volume
+
+    parent.volume_reservoir += vol_change_reservoir
+    parent.volume_cell += vol_change_cell
+    parent.volume_waste += vol_change_waste
+
 def pickup_solution(parent, dev_proxy, vol = 0, val_pos = -1, speed = -1, fill = True):
     dev_proxy = getattr(parent, dev_proxy)
     dev_proxy.valve = int(val_pos)
@@ -98,19 +142,17 @@ def pickup_solution(parent, dev_proxy, vol = 0, val_pos = -1, speed = -1, fill =
     else:
         dev_proxy.fill(int(val_pos), float(speed))
 
-def setup_pickup_solution(parent, dev_proxy, vol = 0, val_pos = -1, speed = -1, fill = True):
+def setup_pickup_solution(parent, dev_proxy):
     if hasattr(parent, dev_proxy):
         dev_proxy = getattr(parent, dev_proxy)        
         val_pos = int(dev_proxy.valve)
         speed = dev_proxy.rate
     else:
         dev_proxy = None
-        if speed == -1:
-            speed = 1
-        if val_pos == -1:
-            val_pos = 1
+        speed = 1
+        val_pos = 1
 
-    @magicgui(auto_call=True, speed={'min': 1, 'max': 250})
+    @magicgui(call_button='apply', speed={'min': 1, 'max': 250})
     def setup_func( speed=float(speed), val_pos = list(Valve)[[1,2,3].index(int(val_pos))]):
         if dev_proxy==None:
             print(locals())
@@ -133,7 +175,7 @@ def setup_fill_cell(parent, dev_proxy, vol):
         speed = 1
         #val_pos = 3
 
-    @magicgui(auto_call=True, speed={'min': 1, 'max': 250}, fill_vol = {'max': 5000})
+    @magicgui(call_button='apply', speed={'min': 1, 'max': 250}, fill_vol = {'max': 5000})
     def setup_func(speed=float(speed), val_pos = Valve.right, fill_vol = float(vol)):
         if dev_proxy==None:
             print(locals())
@@ -153,19 +195,17 @@ def dispense_solution(parent,dev_proxy, vol = 0, val_pos = -1, speed = -1, drain
     else:
         dev_proxy.drain(int(val_pos), float(speed))
 
-def setup_dispense_solution(parent, dev_proxy, vol = 0, val_pos = -1, speed = -1, drain = True):
+def setup_dispense_solution(parent, dev_proxy):
     if hasattr(parent, dev_proxy):
         dev_proxy = getattr(parent, dev_proxy)        
         val_pos = int(dev_proxy.valve)
         speed = dev_proxy.rate
     else:
         dev_proxy = None
-        if speed == -1:
-            speed = 1
-        if val_pos == -1:
-            val_pos = 2
+        speed = 1
+        val_pos = 2
 
-    @magicgui(auto_call=True, speed={'min': 1, 'max': 250})
+    @magicgui(call_button='apply', speed={'min': 1, 'max': 250})
     def setup_func(speed=float(speed), val_pos = list(Valve)[[1,2,3].index(int(val_pos))]):
         if dev_proxy==None:
             print(locals())
@@ -178,17 +218,29 @@ def setup_dispense_solution(parent, dev_proxy, vol = 0, val_pos = -1, speed = -1
 def move_valve(parent, dev_proxy,val_pos):
     getattr(parent,dev_proxy).valve = int(val_pos)
 
-def exchange_solution(parent, operation_pair = 1, leftover_vol = 1000, rate = 150):
+def exchange_solution(parent, operation_pair = 1):
     exchange_obj = parent.pump_client.operations[f"Exchanger {operation_pair}"]
-    exchange_obj.exchange(exchange_obj.exchangeableVolume - leftover_vol, rate)
+    exchange_obj.exchange(exchange_obj.exchangeableVolume - parent.leftover_vol)
 
-def increase_liquid_vol_in_cell(parent, vol = 50):
+def increase_liquid_vol_in_cell(parent):
     exchange_obj = parent.pump_client.operations[f"Exchanger {parent.operation_pair}"]
-    exchange_obj.increaseVolume(volume = float(vol))
+    exchange_obj.increaseVolume(volume = float(parent.volume_change_on_the_fly))
 
-def decrease_liquid_vol_in_cell(parent, vol = 50):
+def setup_increase_liquid_vol_in_cell(parent):
+    @magicgui(call_button='apply')
+    def setup_func(increase_vol_from_cell=parent.volume_change_on_the_fly):
+        parent.volume_change_on_the_fly = increase_vol_from_cell
+    return setup_func
+
+def decrease_liquid_vol_in_cell(parent):
     exchange_obj = parent.pump_client.operations[f"Exchanger {parent.operation_pair}"]
-    exchange_obj.decreaseVolume(volume = vol)
+    exchange_obj.decreaseVolume(volume = float(parent.volume_change_on_the_fly))
+
+def setup_decrease_liquid_vol_in_cell(parent):
+    @magicgui(call_button='apply')
+    def setup_func(decrease_vol_from_cell=parent.volume_change_on_the_fly):
+        parent.volume_change_on_the_fly = decrease_vol_from_cell
+    return setup_func
 
 def prepare_exchange(parent):
     parent.pump_client.operations["Exchanger 1"].pullSyr.valve = "Waste"
@@ -213,12 +265,13 @@ def setup_exchange(parent):
         drainrate = parent.pump_client.operations['Exchanger 1'].drainrate
         rate = parent.pump_client.operations['Exchanger 1'].rate
         bubbleDispense = parent.pump_client.operations['Exchanger 1'].bubbleDispense
-    @magicgui(auto_call=True, 
+    @magicgui(call_button='apply', 
               fillrate={'min': 50, 'max': 250},
               drainrate={'min': 50, 'max': 250},
               rate={'min':1, 'max':200},
+              leftover_vol={'min':1, 'max':2000},
               bubbleDispense={'min': 10, 'max': 5000})
-    def setup_func(fillrate=float(fillrate), drainrate=float(drainrate), rate=float(rate),bubbleDispense = float(bubbleDispense)):
+    def setup_func(fillrate=float(fillrate), drainrate=float(drainrate), rate=float(rate),leftover_vol=float(parent.leftover_vol), bubbleDispense = float(bubbleDispense)):
         if not hasattr(parent, 'pump_client'):
             print(locals())
         else:
@@ -226,8 +279,8 @@ def setup_exchange(parent):
                 if key!='parent':
                     setattr(parent.pump_client.operations['Exchanger 1'], key, value)
                     setattr(parent.pump_client.operations['Exchanger 2'], key, value)
+        parent.leftover_vol = leftover_vol
     return setup_func
-
 
 def start_automatic_exchange(parent):
     parent.exchange_timer.timeout.connect(lambda: check_automatic_exchange(parent))
@@ -249,7 +302,7 @@ def check_automatic_exchange(parent):
             parent.syringe_3.join()
             parent.syringe_4.join()
             parent.pump_client.operations["Exchanger 1"].prepare()
-            print("Exchange solution with pair of 2")
+            parent.statusbar.showMessage("Exchange solution with pair of 2")
         elif parent.exchange_pair == 2:
             parent.exchange_pair = 1
             exchange_solution(parent,1)
@@ -258,7 +311,7 @@ def check_automatic_exchange(parent):
             parent.syringe_1.join()
             parent.syringe_2.join()
             parent.pump_client.operations["Exchanger 2"].prepare()
-            print("Exchange solution with pair of 1")
+            parent.statusbar.showMessage("Exchange solution with pair of 1")
 
 def all_setup_in_one(parent, firstclient=False):
     if type(firstclient)!=bool:
@@ -269,10 +322,41 @@ def all_setup_in_one(parent, firstclient=False):
     get_syringe_proxy(parent, 3)
     get_syringe_proxy(parent, 4)
     get_mvp_valve_proxy(parent, 5)
+    parent.check_vol_timer.timeout.connect(lambda: update_volumes(parent))
+    parent.check_vol_timer.start(50)
+
+def reset_volumes(parent):
+    parent.check_vol_timer.stop()
+    @magicgui(call_button='apply')
+    def setup_func(cell_volume = float(parent.volume_cell), reservoir_volume = float(parent.volume_reservoir), waste_volume = float(parent.volume_waste)):
+        try:
+            parent.check_vol_timer.stop()
+        except:
+            pass
+        parent.volume_cell = cell_volume
+        parent.volume_reservoir = reservoir_volume
+        parent.volume_waste = waste_volume
+        parent.check_vol_timer.start()
+    return setup_func
 
 def setup_client_par(parent):
-    @magicgui(auto_call=True)
-    def setup_func(first_client = bool(parent.first_client)):
+    with open(config_file, 'r', encoding='utf8') as f:
+        config = yaml.safe_load(f.read())
+
+    host = config['server']['host']
+    port = config['server']['port']
+    tango_name = config['server']['tangoname']
+    serial_port = config['server']['serialport']
+
+    @magicgui(call_button='apply')
+    def setup_func(host=host, port=port, tango_name = tango_name, serial_port = serial_port,first_client = bool(parent.first_client)):
+        config['server']['host'] = host
+        config['server']['port'] = port
+        config['server']['tangoname'] = tango_name
+        config['server']['serialport'] = serial_port
+
+        with open(config_file,'w') as f:
+            yaml.dump(config, f, default_flow_style=False)
         parent.first_client = first_client
     return setup_func
 
