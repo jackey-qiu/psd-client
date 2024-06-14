@@ -996,14 +996,14 @@ class shapeComposite(TaurusBaseComponent, QObject):
             return lambda *kwargs:None
         #if there are multiple callbacks linking to one model
         if type(callback_info_list[0])==list:
-            def call_back_chain(shape, model_value):
+            def call_back_chain(parent, shape, model_value):
                 cbs = []
                 for callback_info in callback_info_list:
                     cb_str = callback_info[0]
                     cb_args = callback_info[1:]
                     cbs.append(partial(eval(cb_str), **{cb_args[i]:cb_args[i+1] for i in range(0, len(cb_args),2)}))
                 for cb in cbs:
-                    cb(shape, model_value)
+                    cb(parent, shape, model_value)
             def call_back_chain_mouseclick(parent):
                 cbs = []
                 for callback_info in callback_info_list:
@@ -1123,7 +1123,7 @@ class shapeComposite(TaurusBaseComponent, QObject):
                 if key not in self.modelKeys:#this could happen when the setModel step is slower than the event polling
                     return
                 if evt_src is self.getModelObj(key=key):
-                    self._callbacks_upon_model_change[_ix](self.shapes[_ix], evt_value)
+                    self._callbacks_upon_model_change[_ix](self.parent, self.shapes[_ix], evt_value)
                     self.updateSignal.emit()
         except Exception as e:
             #if i>(len(self.modelKeys)-2):

@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 install_requires=["PyQt5", "pyqtgraph", \
                   "QDarkStyle", "pyyaml", \
                   "pytango", "taurus", 'pyserial',\
-                  'magicgui','numpy','scipy']
+                  'magicgui','numpy','scipy','gevent']
 
 setup(
     name = 'psd',

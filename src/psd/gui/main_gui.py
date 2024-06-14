@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QMessageBox, QMainWindow
 from psd import rs_path
 from os import listdir
 import yaml
-from PyQt5.QtCore import pyqtSlot as Slot
+from PyQt5.QtCore import pyqtSlot as Slot, QTimer
 import threading
 
 setting_file = str(Path(__file__).parent.parent / 'resource' / 'config' / 'appsettings.ini')
@@ -56,6 +56,8 @@ class smartGui(QMainWindow):
         self.volume_reservoir = 0
         self.volume_cell = 0
         self.volume_waste = 0
+        self.exchange_timer = QTimer()
+        self.check_vol_timer = QTimer()
 
     def connect_slots(self):
         """

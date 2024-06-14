@@ -233,7 +233,7 @@ composite_shapes:
       5: ['move_valve', "dev_proxy", "syringe_4", "val_pos", "3"]
       11: ['pickup_solution', "dev_proxy", "syringe_4", "val_pos", "1",'fill','True']
       12: ['dispense_solution', "dev_proxy", "syringe_4", "val_pos", "2",'drain','True']
-      13: ['fill_cell', "dev_proxy", "syringe_4", 'vol', '500']
+      13: ['fill_cell', "dev_proxy", "syringe_4", 'vol', '500',"drain", "False"]
     callbacks_upon_rightmouse_click:
       9: null
       10: null
@@ -319,7 +319,7 @@ composite_shapes:
       5: ['move_valve', "dev_proxy", "syringe_2", "val_pos", "3"]
       11: ['pickup_solution', "dev_proxy", "syringe_2", "val_pos", "1",'fill','True']
       12: ['dispense_solution', "dev_proxy", "syringe_2", "val_pos", "2",'drain','True']      
-      13: ['fill_cell', "dev_proxy", "syringe_2", 'vol', '500']
+      13: ['fill_cell', "dev_proxy", "syringe_2", 'vol', '500', "drain", "False"]
     callbacks_upon_rightmouse_click:
       9: null
       10: null
@@ -499,7 +499,8 @@ composite_shapes:
     transformation: 
       translate: [220,220]
     models:
-      3: eval:@c=psd.gui.main_gui.smartGui()/c.volume_cell
+      1: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
+      3: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
       4: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
       5: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
       6: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
@@ -509,7 +510,8 @@ composite_shapes:
       10: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
       11: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
     callbacks_upon_model_change:
-      3: ['callback_model_change_with_text_label', 'anchor', 'left','orientation', 'horizontal', "val_ix","None", "sf","1","label","vol","end_txt","ul"]
+      1: ["callback_model_change_with_text_label_main_gui", "anchor", 'center', "orientation", 'horizontal', "attr", "volume_cell", "label","", "end_txt", "ul"]
+      3: ["callback_model_change_with_text_label_main_gui", "anchor", 'center', "orientation", 'horizontal', "attr", "volume_cell", "label","cell vol:", "end_txt", "ul"]
       4: null
       5: null
       6: null
@@ -519,6 +521,7 @@ composite_shapes:
       10: null
       11: null
     callbacks_upon_leftmouse_click:
+      1: null
       3: null
       4: 
         - ['prepare_exchange']    
@@ -537,7 +540,8 @@ composite_shapes:
       11:
         - ['decrease_liquid_vol_in_cell'] 
     callbacks_upon_rightmouse_click:
-      3: null
+      1: null
+      3: ["reset_volumes"]
       4: ['setup_exchange']
       5: null
       6: null
@@ -557,10 +561,33 @@ composite_shapes:
       ref_anchors: [['bottom', 'top'],[null, null],[null, null],[null, null],[null, null],[null, null]]
     transformation: 
       translate: [220,220]
-    models: []
-    callbacks_upon_model_change: []
-    callbacks_upon_leftmouse_click: []    
-    callbacks_upon_rightmouse_click: []    
+    models: 
+      5: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
+    callbacks_upon_model_change: 
+      5: ["callback_model_change_with_text_label_main_gui", "anchor", 'bottom', "orientation", 'horizontal', "attr", "volume_reservoir", "label","reservoir vol", "end_txt", "ml"]
+    callbacks_upon_leftmouse_click: 
+      5: null 
+    callbacks_upon_rightmouse_click:
+      5: ["reset_volumes"] 
+  waste:
+    shapes: ['circle.tiny*1','rectangle.bottle_top*1','rectangle.bottle_thread*3','rectangle.bottle_bottom*1', 'rectangle.bottle_marker*1']
+    ref_shape: null
+    hide: [0, 6]
+    alignment: 
+      shapes: [[0, 1], [1, 2], [2, 3], [3, 4],[4, 5],[5, 6]]
+      anchors: [['cen','cen'], ['bottom','top'],['bottom','top'],['bottom','top'],['bottom','top'],['left','right']]
+      gaps: [0, 0, 0, 0, 0, 0]
+      ref_anchors: [['bottom', 'top'],[null, null],[null, null],[null, null],[null, null],[null, null]]
+    transformation: 
+      translate: [220,220]
+    models: 
+      5: tango://hasep25lab01.desy.de:10000/test/pumpserver/1/syringepos
+    callbacks_upon_model_change: 
+      5: ["callback_model_change_with_text_label_main_gui", "anchor", 'bottom', "orientation", 'horizontal', "attr", "volume_waste", "label","waste vol", "end_txt", "ml"]
+    callbacks_upon_leftmouse_click: 
+      5: null 
+    callbacks_upon_rightmouse_click:
+      5: ["reset_volumes"] 
   anchor:
     shapes: ['circle.tiny*2']
     ref_shape: null
@@ -584,7 +611,7 @@ composite_shapes:
       8: []
 viewers:
   viewer1:
-    composites: ['anchor','bottle', 'syringe','syringe2','cell','syringe3','syringe4','bottle', 'anchor']
+    composites: ['anchor','bottle', 'syringe','syringe2','cell','syringe3','syringe4','waste', 'anchor']
     transformation:
       translate:
         - [50, 220]

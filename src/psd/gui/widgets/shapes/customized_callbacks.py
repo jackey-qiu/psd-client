@@ -111,27 +111,29 @@ def update_volumes(parent):
     vol_change_cell = 0
     vol_change_waste = 0
 
-    vol_change_syringe_1 = parent.syringe_1.volume - parent.volume_syringe_1
-    vol_change_syringe_2 = parent.syringe_2.volume - parent.volume_syringe_2
-    vol_change_syringe_3 = parent.syringe_3.volume - parent.volume_syringe_3
-    vol_change_syringe_4 = parent.syringe_4.volume - parent.volume_syringe_4
+    vol_change_syringe_1 = parent.syringe_1.volume - parent.volume_syringe_1 if parent.syringe_1.busy else 0
+    vol_change_syringe_2 = parent.syringe_2.volume - parent.volume_syringe_2 if parent.syringe_2.busy else 0
+    vol_change_syringe_3 = parent.syringe_3.volume - parent.volume_syringe_3 if parent.syringe_3.busy else 0
+    vol_change_syringe_4 = parent.syringe_4.volume - parent.volume_syringe_4 if parent.syringe_4.busy else 0
     vol_change_list = [vol_change_syringe_1, vol_change_syringe_2, vol_change_syringe_3, vol_change_syringe_4]
     for i, syringe in enumerate([parent.syringe_1, parent.syringe_2, parent.syringe_3, parent.syringe_4]):
-        if syringe.valve == 'Reservoir':
-            vol_change_reservoir -= vol_change_list[i]
-        elif syringe.valve == 'Cell':
-            vol_change_cell -= vol_change_list[i]
-        elif syringe.valve == 'Waste':
-            vol_change_waste -= vol_change_list[i]
+        if vol_change_list[i]!=0:
+            if syringe.valve == 'Reservoir':
+                vol_change_reservoir -= vol_change_list[i]
+            elif syringe.valve == 'Cell':
+                vol_change_cell -= vol_change_list[i]
+            elif syringe.valve == 'Waste':
+                vol_change_waste -= vol_change_list[i]
+            setattr(parent, f"volume_syringe_{i+1}", getattr(parent, f"syringe_{i+1}").volume)
+    #parent.volume_syringe_1 = parent.syringe_1.volume
+    #parent.volume_syringe_2 = parent.syringe_2.volume
+    #parent.volume_syringe_3 = parent.syringe_3.volume
+    #parent.volume_syringe_4 = parent.syringe_4.volume
 
-    parent.volume_syringe_1 = parent.syringe_1.volume
-    parent.volume_syringe_2 = parent.syringe_2.volume
-    parent.volume_syringe_3 = parent.syringe_3.volume
-    parent.volume_syringe_4 = parent.syringe_4.volume
-
-    parent.volume_reservoir += vol_change_reservoir
-    parent.volume_cell += vol_change_cell
-    parent.volume_waste += vol_change_waste
+    parent.volume_reservoir = round(parent.volume_reservoir + vol_change_reservoir/1000,3)
+    parent.volume_cell = round(parent.volume_cell+vol_change_cell,1)
+    parent.volume_waste = round(parent.volume_waste+vol_change_waste/1000,3)
+    parent.statusbar.showMessage(f"reseroir:{round(parent.volume_reservoir,2)} ml, cell: {round(parent.volume_cell,1)} ul, waste: {round(parent.volume_waste,2)} ml")
 
 def pickup_solution(parent, dev_proxy, vol = 0, val_pos = -1, speed = -1, fill = True):
     dev_proxy = getattr(parent, dev_proxy)
@@ -145,25 +147,26 @@ def pickup_solution(parent, dev_proxy, vol = 0, val_pos = -1, speed = -1, fill =
 def setup_pickup_solution(parent, dev_proxy):
     if hasattr(parent, dev_proxy):
         dev_proxy = getattr(parent, dev_proxy)        
-        val_pos = int(dev_proxy.valve)
+        val_pos = dev_proxy.valve
         speed = dev_proxy.rate
     else:
         dev_proxy = None
         speed = 1
         val_pos = 1
 
-    @magicgui(call_button='apply', speed={'min': 1, 'max': 250})
-    def setup_func( speed=float(speed), val_pos = list(Valve)[[1,2,3].index(int(val_pos))]):
+    @magicgui(call_button='apply', speed={'min': 1, 'max': 500})
+    # def setup_func( speed=float(speed), val_pos = list(Valve)[[1,2,3].index(int(val_pos))]):
+    def setup_func( speed=float(speed), val_pos = val_pos):
         if dev_proxy==None:
             print(locals())
         else:
-            dev_proxy.valve = val_pos.value
+            dev_proxy.valve = val_pos
             dev_proxy.join()
             dev_proxy.rate = speed
     return setup_func
 
-def fill_cell(parent, dev_proxy, vol):
-    dispense_solution(parent, dev_proxy, float(vol), 3, speed = -1, drain = False)
+def fill_cell(parent, dev_proxy, vol, drain = False):
+    dispense_solution(parent, dev_proxy, float(vol), 3, speed = -1, drain = drain)
 
 def setup_fill_cell(parent, dev_proxy, vol):
     if hasattr(parent, dev_proxy):
@@ -175,7 +178,7 @@ def setup_fill_cell(parent, dev_proxy, vol):
         speed = 1
         #val_pos = 3
 
-    @magicgui(call_button='apply', speed={'min': 1, 'max': 250}, fill_vol = {'max': 5000})
+    @magicgui(call_button='apply', speed={'min': 1, 'max': 500}, fill_vol = {'max': 5000})
     def setup_func(speed=float(speed), val_pos = Valve.right, fill_vol = float(vol)):
         if dev_proxy==None:
             print(locals())
@@ -198,19 +201,20 @@ def dispense_solution(parent,dev_proxy, vol = 0, val_pos = -1, speed = -1, drain
 def setup_dispense_solution(parent, dev_proxy):
     if hasattr(parent, dev_proxy):
         dev_proxy = getattr(parent, dev_proxy)        
-        val_pos = int(dev_proxy.valve)
+        val_pos = dev_proxy.valve
         speed = dev_proxy.rate
     else:
         dev_proxy = None
         speed = 1
         val_pos = 2
 
-    @magicgui(call_button='apply', speed={'min': 1, 'max': 250})
-    def setup_func(speed=float(speed), val_pos = list(Valve)[[1,2,3].index(int(val_pos))]):
+    @magicgui(call_button='apply', speed={'min': 1, 'max': 500})
+    # def setup_func(speed=float(speed), val_pos = list(Valve)[[1,2,3].index(int(val_pos))]):
+    def setup_func(speed=float(speed), val_pos = val_pos):
         if dev_proxy==None:
             print(locals())
         else:
-            dev_proxy.valve = val_pos.value
+            dev_proxy.valve = val_pos
             dev_proxy.join()
             dev_proxy.rate = speed
     return setup_func
@@ -223,7 +227,7 @@ def exchange_solution(parent, operation_pair = 1):
     exchange_obj.exchange(exchange_obj.exchangeableVolume - parent.leftover_vol)
 
 def increase_liquid_vol_in_cell(parent):
-    exchange_obj = parent.pump_client.operations[f"Exchanger {parent.operation_pair}"]
+    exchange_obj = parent.pump_client.operations[f"Exchanger {parent.exchange_pair}"]
     exchange_obj.increaseVolume(volume = float(parent.volume_change_on_the_fly))
 
 def setup_increase_liquid_vol_in_cell(parent):
@@ -233,7 +237,7 @@ def setup_increase_liquid_vol_in_cell(parent):
     return setup_func
 
 def decrease_liquid_vol_in_cell(parent):
-    exchange_obj = parent.pump_client.operations[f"Exchanger {parent.operation_pair}"]
+    exchange_obj = parent.pump_client.operations[f"Exchanger {parent.exchange_pair}"]
     exchange_obj.decreaseVolume(volume = float(parent.volume_change_on_the_fly))
 
 def setup_decrease_liquid_vol_in_cell(parent):
@@ -266,9 +270,9 @@ def setup_exchange(parent):
         rate = parent.pump_client.operations['Exchanger 1'].rate
         bubbleDispense = parent.pump_client.operations['Exchanger 1'].bubbleDispense
     @magicgui(call_button='apply', 
-              fillrate={'min': 50, 'max': 250},
-              drainrate={'min': 50, 'max': 250},
-              rate={'min':1, 'max':200},
+              fillrate={'min': 1, 'max': 500},
+              drainrate={'min': 1, 'max': 500},
+              rate={'min':1, 'max':500},
               leftover_vol={'min':1, 'max':2000},
               bubbleDispense={'min': 10, 'max': 5000})
     def setup_func(fillrate=float(fillrate), drainrate=float(drainrate), rate=float(rate),leftover_vol=float(parent.leftover_vol), bubbleDispense = float(bubbleDispense)):
@@ -323,7 +327,6 @@ def all_setup_in_one(parent, firstclient=False):
     get_syringe_proxy(parent, 4)
     get_mvp_valve_proxy(parent, 5)
     parent.check_vol_timer.timeout.connect(lambda: update_volumes(parent))
-    parent.check_vol_timer.start(50)
 
 def reset_volumes(parent):
     parent.check_vol_timer.stop()
@@ -336,7 +339,7 @@ def reset_volumes(parent):
         parent.volume_cell = cell_volume
         parent.volume_reservoir = reservoir_volume
         parent.volume_waste = waste_volume
-        parent.check_vol_timer.start()
+        parent.check_vol_timer.start(5)
     return setup_func
 
 def setup_client_par(parent):

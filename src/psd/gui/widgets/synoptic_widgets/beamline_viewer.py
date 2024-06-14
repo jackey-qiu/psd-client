@@ -17,8 +17,6 @@ class beamlineSynopticViewer(QWidget):
         self.viewer_shape = None
         self.viewer_connection = {}
         self.set_parent()
-        self.parent.exchange_timer = QTimer()
-        self.parent.check_vol_timer = QTimer()
 
     def connect_slots_synoptic_viewer(self):
         pass
@@ -140,19 +138,13 @@ class beamlineSynopticViewer(QWidget):
 
     def mouseMoveEvent(self, event):
         self.last_x, self.last_y = event.x(), event.y()
-        if self.parent !=None:
-            self.parent.statusbar.showMessage('Mouse coords: ( %d : %d )' % (event.x(), event.y()))
+        # if self.parent !=None:
+            # self.parent.statusbar.showMessage('Mouse coords: ( %d : %d )' % (event.x(), event.y()))
         if self.viewer_shape == None:
             return
         for composite_shape in self.viewer_shape.values():
             for each_shape in composite_shape.shapes:
                 each_shape.cursor_pos_checker(event.x(), event.y())
-        """
-        if self.composite_shape == None:
-            return
-        for each_shape in self.composite_shape.shapes:
-            each_shape.cursor_pos_checker(event.x(), event.y())
-        """
         self.update()
 
     def mousePressEvent(self, event):
