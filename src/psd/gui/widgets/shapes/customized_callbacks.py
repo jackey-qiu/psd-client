@@ -221,6 +221,14 @@ def setup_dispense_solution(parent, dev_proxy):
 
 def move_valve(parent, dev_proxy,val_pos):
     getattr(parent,dev_proxy).valve = int(val_pos)
+    name_map = {'syringe_1':'syringe4','syringe_2':'syringe2','syringe_3':'syringe3','syringe_4':'syringe'}
+    #val_pos: 1,2,3 while shape_ix: 3,4,5
+    _update_connection(parent, name_map[dev_proxy],int(val_pos)+2)
+
+def _update_connection(parent,syringe_key, shape_ix):
+    for key in parent.syringe_lines_container[syringe_key].keys():
+        parent.syringe_lines_container[syringe_key][key][1] = False
+    parent.syringe_lines_container[syringe_key][shape_ix][1] = True
 
 def exchange_solution(parent, operation_pair = 1):
     exchange_obj = parent.pump_client.operations[f"Exchanger {operation_pair}"]

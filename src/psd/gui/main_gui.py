@@ -58,6 +58,11 @@ class smartGui(QMainWindow):
         self.volume_waste = 0
         self.exchange_timer = QTimer()
         self.check_vol_timer = QTimer()
+        self.syringe_lines_container = {}
+        self.lines_draw_before = [] 
+        self.lines_draw_after = []
+        self.pen_lines_draw_before = [] 
+        self.pen_lines_draw_after = []
 
     def connect_slots(self):
         """

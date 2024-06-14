@@ -95,14 +95,23 @@ def callback_model_change_with_decoration_on_off(parent, shape, value_model):
     shape.decoration_cursor_on = new_decoration
     shape.decoration_cursor_off = new_decoration
 
-def callback_model_change_with_decoration_valve_position(parent, shape, value_model, val_ix, connect_value):
+def _update_connection(parent,syringe_key, shape_ix, set_true):
+    if shape_ix in parent.syringe_lines_container[syringe_key]:
+        parent.syringe_lines_container[syringe_key][shape_ix][1] = set_true
+    else:
+        pass
+        #print(list(parent.syringe_lines_container[syringe_key].keys()))
+
+def callback_model_change_with_decoration_valve_position(parent, shape, value_model, val_ix, connect_value, syringe_shape_name):
     model_value = _get_model_value(value_model)
     if type(model_value) in [list, np.array, np.ndarray]:
         model_value = model_value[int(val_ix)]
     if int(model_value) == int(connect_value):
         new_decoration = {'brush': {'color': (0, 255, 0)}}
+        _update_connection(parent, syringe_shape_name, int(connect_value)+2, True)
     else:
         new_decoration = {'brush': {'color': (0, 0, 255)}}
+        _update_connection(parent, syringe_shape_name, int(connect_value)+2, False)
     shape.decoration = new_decoration
     shape.decoration_cursor_on = new_decoration
     shape.decoration_cursor_off = new_decoration

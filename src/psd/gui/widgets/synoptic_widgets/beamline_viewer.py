@@ -9,6 +9,8 @@ from ....util.util import findMainWindow
 from psd import rs_path
 from magicgui import magicgui
 
+line_pen = QPen(QColor(255,255,0), 2, Qt.DotLine)
+
 class beamlineSynopticViewer(QWidget):
 
     def __init__(self, parent = None):
@@ -36,6 +38,9 @@ class beamlineSynopticViewer(QWidget):
         self.viewer_shape, self.viewer_connection = view_shape[which_viewer], view_connection[which_viewer]
         for each_composite in self.viewer_shape.values():
             each_composite.updateSignal.connect(self.update_canvas)
+        self.parent.lines_draw_before, self.parent.lines_draw_after, \
+        self.parent.pen_lines_draw_before, self.parent.pen_lines_draw_after, \
+        self.parent.syringe_lines_container = self._generate_connection()
 
     def method_temp_outside(self, sigma_outside):
         @magicgui(auto_call=True,sigma={'max':10})
@@ -53,12 +58,14 @@ class beamlineSynopticViewer(QWidget):
         lines_draw_after = []
         pen_lines_draw_before = []
         pen_lines_draw_after = []
+        syringe_lines_container = {}
         if len(self.viewer_connection) == 0:
             return lines_draw_before, lines_draw_after
         
         def _unpack_str(str_):
+            
             composite_key, shape_ix, direction = str_.rsplit('.')
-            return self.viewer_shape[composite_key].shapes[int(shape_ix)], direction
+            return self.viewer_shape[composite_key].shapes[int(shape_ix)], direction, composite_key, int(shape_ix)
         
         def _make_qpen_from_txt(pen):
             pen_color = QColor(*pen['color'])
@@ -67,19 +74,30 @@ class beamlineSynopticViewer(QWidget):
             return QPen(pen_color, pen_width, pen_style)
         
         for key, con_info in self.viewer_connection.items():
-            shape_lf, anchor_lf = _unpack_str(key.rsplit('<=>')[0])
-            shape_rg, anchor_rg = _unpack_str(key.rsplit('<=>')[1])
+            shape_lf, anchor_lf, composite_key_lf, shape_ix_lf = _unpack_str(key.rsplit('<=>')[0])
+            shape_rg, anchor_rg, composite_key_rg, shape_ix_rg = _unpack_str(key.rsplit('<=>')[1])
+                
             pen = _make_qpen_from_txt(con_info['pen'])
             direct_connect = con_info['direct_connect']
             draw_after = con_info['draw_after']
             lines = buildTools.make_line_connection_btw_two_anchors(shapes = [shape_lf, shape_rg], anchors=[anchor_lf, anchor_rg], direct_connection=direct_connect)
+            if 'syringe' in composite_key_lf:
+                if composite_key_lf not in syringe_lines_container:
+                    syringe_lines_container[composite_key_lf] = {shape_ix_lf: [lines, False]}
+                else:
+                    syringe_lines_container[composite_key_lf][shape_ix_lf] = [lines, False]
+            if 'syringe' in composite_key_rg:
+                if composite_key_rg not in syringe_lines_container:
+                    syringe_lines_container[composite_key_rg] = {shape_ix_rg: [lines, False]}
+                else:
+                    syringe_lines_container[composite_key_rg][shape_ix_rg] = [lines, False]    
             if draw_after:
                 lines_draw_after.append(lines)
                 pen_lines_draw_after.append(pen)
             else:
                 lines_draw_before.append(lines)
                 pen_lines_draw_before.append(pen)
-        return lines_draw_before, lines_draw_after, pen_lines_draw_before, pen_lines_draw_after
+        return lines_draw_before, lines_draw_after, pen_lines_draw_before, pen_lines_draw_after, syringe_lines_container
 
     def scale_composite_shapes(self, sf = None):
         if sf==None:
@@ -106,30 +124,41 @@ class beamlineSynopticViewer(QWidget):
         if self.viewer_shape == None:
             return
         #make line connections
-        if len(self.viewer_connection)!=0:
-            lines_draw_before, lines_draw_after, pen_lines_draw_before, pen_lines_draw_after = self._generate_connection()
-        else:
-            lines_draw_before = []
-            lines_draw_after = []
+        #if len(self.viewer_connection)!=0:
+        #    self.parent.lines_draw_before, self.parent.lines_draw_after, self.parent.pen_lines_draw_before, self.parent.pen_lines_draw_after, self.parent.syringe_lines_container = self._generate_connection()
+        #else:
+        #    lines_draw_before = []
+        #    lines_draw_after = []
+        qp.setPen(line_pen)
+        for line_set in self.parent.syringe_lines_container:
+            for shape_ix in self.parent.syringe_lines_container[line_set]:
+                lines, draw = self.parent.syringe_lines_container[line_set][shape_ix]
+                if draw:
+                    for i in range(len(lines)-1):
+                        pts = list(lines[i]) + list(lines[i+1])
+                        qp.drawLine(*pts)
+        '''            
         #lines to be draw before
-        for k, lines in enumerate(lines_draw_before):
-            qp.setPen(pen_lines_draw_before[k])
+        for k, lines in enumerate(self.parent.lines_draw_before):
+            qp.setPen(self.parent.pen_lines_draw_before[k])
             for i in range(len(lines)-1):
                 pts = list(lines[i]) + list(lines[i+1])
                 qp.drawLine(*pts)
+        '''
         #draw shapes
         for composite_shape in self.viewer_shape.values():
             for each_shape in composite_shape.shapes:
                 qp.resetTransform()
                 each_shape.paint(qp)
-
+        '''
         #lines to be draw after
-        for k, lines in enumerate(lines_draw_after):
+        for k, lines in enumerate(self.parent.lines_draw_after):
             qp.resetTransform()
-            qp.setPen(pen_lines_draw_after[k])
+            qp.setPen(self.parent.pen_lines_draw_after[k])
             for i in range(len(lines)-1):
                 pts = list(lines[i]) + list(lines[i+1])
-                qp.drawLine(*pts)                
+                qp.drawLine(*pts)    
+        '''            
         qp.end()
 
     @Slot()
