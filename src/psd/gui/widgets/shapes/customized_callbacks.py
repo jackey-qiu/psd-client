@@ -130,10 +130,10 @@ def update_volumes(parent):
     #parent.volume_syringe_3 = parent.syringe_3.volume
     #parent.volume_syringe_4 = parent.syringe_4.volume
 
-    parent.volume_reservoir = round(parent.volume_reservoir + vol_change_reservoir/1000,3)
-    parent.volume_cell = round(parent.volume_cell+vol_change_cell,1)
-    parent.volume_waste = round(parent.volume_waste+vol_change_waste/1000,3)
-    parent.statusbar.showMessage(f"reseroir:{round(parent.volume_reservoir,2)} ml, cell: {round(parent.volume_cell,1)} ul, waste: {round(parent.volume_waste,2)} ml")
+    parent.volume_reservoir = max([round(parent.volume_reservoir + vol_change_reservoir/1000,3), 0])
+    parent.volume_cell = max([round(parent.volume_cell+vol_change_cell,1), 0])
+    parent.volume_waste = max([round(parent.volume_waste+vol_change_waste/1000,3),0])
+    #parent.statusbar.showMessage(f"reseroir:{round(parent.volume_reservoir,2)} ml, cell: {round(parent.volume_cell,1)} ul, waste: {round(parent.volume_waste,2)} ml")
 
 def pickup_solution(parent, dev_proxy, vol = 0, val_pos = -1, speed = -1, fill = True):
     dev_proxy = getattr(parent, dev_proxy)
@@ -347,6 +347,10 @@ def reset_volumes(parent):
         parent.volume_cell = cell_volume
         parent.volume_reservoir = reservoir_volume
         parent.volume_waste = waste_volume
+        parent.volume_syringe_1 = parent.syringe_1.volume
+        parent.volume_syringe_2 = parent.syringe_2.volume
+        parent.volume_syringe_3 = parent.syringe_3.volume
+        parent.volume_syringe_4 = parent.syringe_4.volume
         parent.check_vol_timer.start(5)
     return setup_func
 

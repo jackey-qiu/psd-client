@@ -9,7 +9,8 @@ from ....util.util import findMainWindow
 from psd import rs_path
 from magicgui import magicgui
 
-line_pen = QPen(QColor(255,255,0), 2, Qt.DotLine)
+line_pen = QPen(QColor(100,100,100), 2, Qt.DotLine)
+line_pen_actived = QPen(QColor(255,0,0), 2, Qt.DotLine)
 
 class beamlineSynopticViewer(QWidget):
 
@@ -129,14 +130,23 @@ class beamlineSynopticViewer(QWidget):
         #else:
         #    lines_draw_before = []
         #    lines_draw_after = []
-        qp.setPen(line_pen)
         for line_set in self.parent.syringe_lines_container:
             for shape_ix in self.parent.syringe_lines_container[line_set]:
                 lines, draw = self.parent.syringe_lines_container[line_set][shape_ix]
                 if draw:
                     for i in range(len(lines)-1):
                         pts = list(lines[i]) + list(lines[i+1])
-                        qp.drawLine(*pts)
+                        if hasattr(self.parent, "exchange_pair"):
+                            if (self.parent.exchange_pair==1 and line_set in ["syringe","syringe3"]) or \
+                               (self.parent.exchange_pair==2 and line_set in ["syringe2","syringe4"]):
+                                qp.setPen(line_pen_actived)
+                                qp.drawLine(*pts)
+                            else:
+                                qp.setPen(line_pen)
+                                qp.drawLine(*pts)
+                        else:
+                            qp.setPen(line_pen)
+                            qp.drawLine(*pts)
         '''            
         #lines to be draw before
         for k, lines in enumerate(self.parent.lines_draw_before):
